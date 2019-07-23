@@ -26,7 +26,7 @@ def test_pairwise_distance_cityblock():
     data_dask = da.from_array(data, chunks=(10, 5))
     actual = pairwise_distance(data_dask, metric=metric)
     assert isinstance(actual, da.Array)
-    ac = actual.compute()
+    ac = actual.compute(scheduler="single-threaded")
     assert_allclose(expect, ac)
     assert expect.dtype == actual.dtype
 

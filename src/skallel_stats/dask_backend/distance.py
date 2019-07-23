@@ -4,6 +4,11 @@ from skallel_tensor.dask_backend import chunked_array_types, ensure_dask_array
 from skallel_stats.api import distance as api
 
 
+def pdist_mapper(block, *, metric, **kwargs):
+    # Introduce new axis to allow for mapping blocks.
+    return api.pairwise_distance(block, metric=metric, **kwargs)[None, :]
+
+
 def pairwise_distance(x, *, metric, **kwargs):
 
     # Check inputs.
@@ -24,16 +29,16 @@ def pairwise_distance(x, *, metric, **kwargs):
 
         # Compute distance in blocks.
         d = da.map_blocks(
-            api.pairwise_distance,
+            pdist_mapper,
             x,
-            chunks=chunks,
             metric=metric,
+            chunks=chunks,
             dtype=np.float64,
+            **kwargs
         )
-        print(d.shape)
 
-        # Sum blocks
-        out = d.sum(axis=0)
+        # Sum blocks.
+        out = da.sum(d, axis=0, dtype=np.float64)
 
         return out
 
