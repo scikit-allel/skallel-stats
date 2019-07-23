@@ -6,8 +6,7 @@ import zarr
 from skallel_stats import pairwise_distance
 
 
-def test_pairwise_distance_cityblock():
-    metric = "cityblock"
+def _test_pairwise_distance(metric):
 
     # Simulate some data, N.B., oriented such that we want to compute
     # distance between columns.
@@ -36,3 +35,15 @@ def test_pairwise_distance_cityblock():
     assert isinstance(actual, da.Array)
     assert_allclose(expect, actual.compute())
     assert expect.dtype == actual.dtype
+
+
+def test_cityblock():
+    _test_pairwise_distance("cityblock")
+
+
+def test_euclidean():
+    _test_pairwise_distance("euclidean")
+
+
+def test_sqeuclidean():
+    _test_pairwise_distance("sqeuclidean")

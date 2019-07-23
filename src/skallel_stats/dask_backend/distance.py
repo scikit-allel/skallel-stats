@@ -22,28 +22,44 @@ def pairwise_distance(x, *, metric, **kwargs):
     n = x.shape[1]
     n_pairs = n * (n - 1) // 2
 
-    if metric == "cityblock":
+    if metric in {"cityblock", "sqeuclidean"}:
 
-        # Compute output chunks.
-        chunks = ((1,) * len(x.chunks[0]), (n_pairs,))
+        # These are additive metrics, can just map blocks and sum.
+        mapper_metric = metric
+        finalizer = None
 
-        # Compute distance in blocks.
-        d = da.map_blocks(
-            pdist_mapper,
-            x,
-            metric=metric,
-            chunks=chunks,
-            dtype=np.float64,
-            **kwargs
-        )
+    elif metric == "euclidean":
 
-        # Sum blocks.
-        out = da.sum(d, axis=0, dtype=np.float64)
-
-        return out
+        # Need to compute square euclidean in blocks, then sum, then take
+        # square root.
+        mapper_metric = "sqeuclidean"
+        finalizer = da.sqrt
 
     else:
+
         raise NotImplementedError
+
+    # Compute output chunks.
+    chunks = ((1,) * len(x.chunks[0]), (n_pairs,))
+
+    # Compute distance in blocks.
+    d = da.map_blocks(
+        pdist_mapper,
+        x,
+        metric=mapper_metric,
+        chunks=chunks,
+        dtype=np.float64,
+        **kwargs
+    )
+
+    # Sum blocks.
+    out = da.sum(d, axis=0, dtype=np.float64)
+
+    # Finalize.
+    if finalizer is not None:
+        out = finalizer(out)
+
+    return out
 
 
 api.dispatch_pairwise_distance.add((chunked_array_types,), pairwise_distance)
