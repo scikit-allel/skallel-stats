@@ -47,3 +47,11 @@ def test_euclidean():
 
 def test_sqeuclidean():
     _test_pairwise_distance("sqeuclidean")
+
+
+def test_hamming():
+    _test_pairwise_distance("hamming")
+
+
+def test_jaccard():
+    _test_pairwise_distance("jaccard")
