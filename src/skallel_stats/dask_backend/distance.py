@@ -24,14 +24,14 @@ def hamming_mapper(x):
 
     # Iterate over data.
     for i in range(m):
-        ix = 0
+        pair_index = 0
         for j in range(n):
             u = x[i, j]
             for k in range(j + 1, n):
                 v = x[i, k]
                 if u != v:
-                    num[0, ix] += 1
-                ix += 1
+                    num[0, pair_index] += 1
+                pair_index += 1
 
     # Stack outputs for single return value.
     out = np.dstack((num, den))
@@ -52,16 +52,16 @@ def jaccard_mapper(x):
 
     # Iterate over data.
     for i in range(m):
-        ix = 0
+        pair_index = 0
         for j in range(n):
             u = x[i, j]
             for k in range(j + 1, n):
                 v = x[i, k]
                 if u > 0 or v > 0:
-                    den[0, ix] += 1
+                    den[0, pair_index] += 1
                     if u != v:
-                        num[0, ix] += 1
-                ix += 1
+                        num[0, pair_index] += 1
+                pair_index += 1
 
     # Stack outputs for single return value.
     out = np.dstack((num, den))
@@ -94,8 +94,8 @@ def pairwise_distance(x, *, metric, **kwargs):
 
     elif metric == "euclidean":
 
-        # Need to compute square euclidean in blocks, then sum, then take
-        # square root.
+        # Compute square euclidean in blocks, sum over blocks, then take square
+        # root.
         mapper = pdist_mapper
         mapper_kwargs = dict(metric="sqeuclidean")
         chunks = ((1,) * n_blocks, (n_pairs,))
@@ -103,7 +103,7 @@ def pairwise_distance(x, *, metric, **kwargs):
 
     elif metric == "hamming":
 
-        # Need to compute numerator and denominator separately, sum,
+        # Compute numerator and denominator in blocks, sum over blocks,
         # then divide.
         mapper = hamming_mapper
         mapper_kwargs = dict(new_axis=2)
@@ -114,7 +114,7 @@ def pairwise_distance(x, *, metric, **kwargs):
 
     elif metric == "jaccard":
 
-        # Need to compute numerator and denominator separately, sum,
+        # Compute numerator and denominator in blocks, sum over blocks,
         # then divide.
         mapper = jaccard_mapper
         mapper_kwargs = dict(new_axis=2)
