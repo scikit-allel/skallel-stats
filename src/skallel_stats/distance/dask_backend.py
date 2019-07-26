@@ -73,7 +73,11 @@ def pairwise_distance(x, *, metric, **kwargs):
         # Compute distance in blocks.
         chunks = ((1,) * n_blocks, (n_pairs,), (2,))
         d = da.map_blocks(
-            api.dispatch_map_block_hamming, x, chunks=chunks, dtype=np.float64
+            api.dispatch_map_block_hamming,
+            x,
+            chunks=chunks,
+            dtype=np.float64,
+            new_axis=2,
         )
 
         # Sum blocks.
@@ -89,7 +93,11 @@ def pairwise_distance(x, *, metric, **kwargs):
         # Compute distance in blocks.
         chunks = ((1,) * n_blocks, (n_pairs,), (2,))
         d = da.map_blocks(
-            api.dispatch_map_block_jaccard, x, chunks=chunks, dtype=np.float64
+            api.dispatch_map_block_jaccard,
+            x,
+            chunks=chunks,
+            dtype=np.float64,
+            new_axis=2,
         )
 
         # Sum blocks.

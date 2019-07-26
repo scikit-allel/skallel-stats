@@ -9,7 +9,9 @@ def pairwise_distance(x, *, metric, **kwargs):
     check_array_like(x, ndim=2)
 
     # Dispatch.
-    return dispatch_pairwise_distance(x, metric=metric, **kwargs)
+    out = dispatch_pairwise_distance(x, metric=metric, **kwargs)
+
+    return out
 
 
 dispatch_pairwise_distance = Dispatcher("dispatch_pairwise_distance")
