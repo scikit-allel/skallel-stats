@@ -13,3 +13,7 @@ def pairwise_distance(x, *, metric, **kwargs):
 
 
 dispatch_pairwise_distance = Dispatcher("dispatch_pairwise_distance")
+dispatch_map_block_cityblock = Dispatcher("map_block_cityblock")
+dispatch_map_block_sqeuclidean = Dispatcher("map_block_sqeuclidean")
+dispatch_map_block_hamming = Dispatcher("map_block_hamming")
+dispatch_map_block_jaccard = Dispatcher("map_block_jaccard")
