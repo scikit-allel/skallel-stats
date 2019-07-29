@@ -15,6 +15,13 @@ try:  # pragma: no cover
 except ImportError:
     # Not available when using CUDA simulator.
     pass
+try:  # pragma: no cover
+    import cupy
+
+    cuda_array_types += (cupy.ndarray,)
+except ImportError:
+    # For testing, using numpy as cupy.
+    import numpy as cupy
 
 
 def pairwise_distance(x, *, metric, **kwargs):
@@ -160,3 +167,102 @@ def kernel_jaccard(x, out):
             numerator += t and u != v
         # Store distance result.
         out[pair_index] = numerator / denominator
+
+
+def map_block_cityblock(x):
+    assert x.ndim == 2
+    out = pairwise_distance(x, metric="cityblock")
+    out = out.reshape((1, out.shape[0]))
+    return out
+
+
+api.dispatch_map_block_cityblock.add((cuda_array_types,), map_block_cityblock)
+
+
+def map_block_sqeuclidean(x):
+    assert x.ndim == 2
+    out = pairwise_distance(x, metric="sqeuclidean")
+    out = out.reshape((1, out.shape[0]))
+    return out
+
+
+api.dispatch_map_block_sqeuclidean.add(
+    (cuda_array_types,), map_block_sqeuclidean
+)
+
+
+def map_block_hamming(x):
+    assert x.ndim == 2
+    # Set up output array.
+    n = x.shape[1]
+    n_pairs = (n * (n - 1)) // 2
+    out = cuda.device_array((1, n_pairs, 2), dtype=np.float32)
+    # Let numba decide number of threads and blocks.
+    kernel_spec = kernel_map_block_hamming.forall(n_pairs)
+    kernel_spec(x, out)
+    # Convert to cupy array for further work on GPU.
+    out = cupy.asarray(out)
+    return out
+
+
+api.dispatch_map_block_hamming.add((cuda_array_types,), map_block_hamming)
+
+
+@cuda.jit
+def kernel_map_block_hamming(x, out):
+    m = x.shape[0]
+    n = x.shape[1]
+    n_pairs = (n * (n - 1)) // 2
+    pair_index = cuda.grid(1)
+    if pair_index < n_pairs:
+        # Unpack the pair index to column indices.
+        j, k = square_coords(pair_index, n)
+        # Iterate over rows, accumulating distance.
+        numerator = np.float32(0)
+        for i in range(m):
+            u = x[i, j]
+            v = x[i, k]
+            numerator += u != v
+        # Store distance result.
+        out[0, pair_index, 0] = numerator
+        out[0, pair_index, 1] = m
+
+
+def map_block_jaccard(x):
+    assert x.ndim == 2
+    # Set up output array.
+    n = x.shape[1]
+    n_pairs = (n * (n - 1)) // 2
+    out = cuda.device_array((1, n_pairs, 2), dtype=np.float32)
+    # Let numba decide number of threads and blocks.
+    kernel_spec = kernel_map_block_jaccard.forall(n_pairs)
+    kernel_spec(x, out)
+    # Convert to cupy array for further work on GPU.
+    out = cupy.asarray(out)
+    return out
+
+
+api.dispatch_map_block_jaccard.add((cuda_array_types,), map_block_jaccard)
+
+
+@cuda.jit
+def kernel_map_block_jaccard(x, out):
+    m = x.shape[0]
+    n = x.shape[1]
+    n_pairs = (n * (n - 1)) // 2
+    pair_index = cuda.grid(1)
+    if pair_index < n_pairs:
+        # Unpack the pair index to column indices.
+        j, k = square_coords(pair_index, n)
+        # Iterate over rows, accumulating distance.
+        numerator = np.float32(0)
+        denominator = np.float32(0)
+        for i in range(m):
+            u = x[i, j]
+            v = x[i, k]
+            t = u > 0 or v > 0
+            denominator += t
+            numerator += t and u != v
+        # Store distance result.
+        out[0, pair_index, 0] = numerator
+        out[0, pair_index, 1] = denominator
