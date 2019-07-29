@@ -1,7 +1,6 @@
 import numpy as np
 import dask.array as da
-
-# from numba import cuda
+from numba import cuda
 import os
 from skallel_stats import pairwise_distance
 
@@ -19,8 +18,8 @@ class TimePairwiseDistance:
             low=0, high=3, size=(20000, 100), dtype=np.int8
         )
         self.data_dask = da.from_array(self.data, chunks=(2000, -1))
-        # if not cudasim:
-        #     self.data_cuda = cuda.to_device(self.data)
+        if not cudasim:
+            self.data_cuda = cuda.to_device(self.data)
         #     self.data_dask_cuda = self.data_dask.map_blocks(cuda.to_device)
 
     def time_cityblock_numpy(self):
@@ -28,6 +27,11 @@ class TimePairwiseDistance:
 
     def time_cityblock_dask(self):
         pairwise_distance(self.data_dask, metric="cityblock").compute()
+
+    def time_cityblock_cuda(self):
+        if not cudasim:
+            pairwise_distance(self.data_cuda, metric="cityblock")
+            cuda.synchronize()
 
     def time_sqeuclidean_numpy(self):
         pairwise_distance(self.data, metric="sqeuclidean")

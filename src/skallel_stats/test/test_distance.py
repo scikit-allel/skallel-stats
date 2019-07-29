@@ -2,6 +2,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import scipy.spatial.distance as spd
 import dask.array as da
+from numba import cuda
 import zarr
 from skallel_stats import pairwise_distance
 
@@ -19,7 +20,14 @@ def _test_pairwise_distance(metric):
     actual = pairwise_distance(data, metric=metric)
     assert isinstance(actual, np.ndarray)
     assert_allclose(expect, actual)
-    assert expect.dtype == actual.dtype
+    assert actual.dtype.kind == "f"
+
+    # Test cuda array.
+    data_cuda = cuda.to_device(data)
+    actual = pairwise_distance(data_cuda, metric=metric)
+    assert isinstance(actual, type(data_cuda))
+    assert_allclose(expect, actual.copy_to_host())
+    assert actual.dtype.kind == "f"
 
     # Test dask array.
     data_dask = da.from_array(data, chunks=(10, 5))
@@ -27,14 +35,14 @@ def _test_pairwise_distance(metric):
     assert isinstance(actual, da.Array)
     ac = actual.compute(scheduler="single-threaded")
     assert_allclose(expect, ac)
-    assert expect.dtype == actual.dtype
+    assert actual.dtype.kind == "f"
 
     # Test zarr array.
     data_zarr = zarr.array(data, chunks=(10, 5))
     actual = pairwise_distance(data_zarr, metric=metric)
     assert isinstance(actual, da.Array)
     assert_allclose(expect, actual.compute())
-    assert expect.dtype == actual.dtype
+    assert actual.dtype.kind == "f"
 
 
 def test_cityblock():
