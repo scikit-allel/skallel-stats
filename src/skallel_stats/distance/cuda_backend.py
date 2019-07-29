@@ -20,19 +20,34 @@ except ImportError:
 def pairwise_distance(x, *, metric, **kwargs):
     assert x.ndim == 2
 
+    if metric == "cityblock":
+        kernel = kernel_cityblock
+
+    elif metric == "sqeuclidean":
+        kernel = kernel_sqeuclidean
+
+    elif metric == "euclidean":
+        kernel = kernel_euclidean
+
+    elif metric == "hamming":
+        kernel = kernel_hamming
+
+    elif metric == "jaccard":
+        kernel = kernel_jaccard
+
+    else:
+        raise NotImplementedError
+
     # Set up output array.
     n = x.shape[1]
     n_pairs = (n * (n - 1)) // 2
     out = cuda.device_array(n_pairs, dtype=np.float32)
 
-    if metric == "cityblock":
-        # Let numba decide number of threads and blocks.
-        kernel = kernel_cityblock.forall(n_pairs)
-        kernel(x, out)
-        return out
+    # Let numba decide number of threads and blocks.
+    kernel_spec = kernel.forall(n_pairs)
+    kernel_spec(x, out)
 
-    else:
-        raise NotImplementedError
+    return out
 
 
 api.dispatch_pairwise_distance.add((cuda_array_types,), pairwise_distance)
@@ -66,3 +81,87 @@ def kernel_cityblock(x, out):
             d += math.fabs(u - v)
         # Store distance result.
         out[pair_index] = d
+
+
+@cuda.jit
+def kernel_sqeuclidean(x, out):
+    m = x.shape[0]
+    n = x.shape[1]
+    n_pairs = (n * (n - 1)) // 2
+    pair_index = cuda.grid(1)
+    if pair_index < n_pairs:
+        # Unpack the pair index to column indices.
+        j, k = square_coords(pair_index, n)
+        # Iterate over rows, accumulating distance.
+        d = np.float32(0)
+        for i in range(m):
+            u = np.float32(x[i, j])
+            v = np.float32(x[i, k])
+            d += (u - v) ** 2
+        # Store distance result.
+        out[pair_index] = d
+
+
+@cuda.jit
+def kernel_euclidean(x, out):
+    m = x.shape[0]
+    n = x.shape[1]
+    n_pairs = (n * (n - 1)) // 2
+    pair_index = cuda.grid(1)
+    if pair_index < n_pairs:
+        # Unpack the pair index to column indices.
+        j, k = square_coords(pair_index, n)
+        # Iterate over rows, accumulating distance.
+        d = np.float32(0)
+        for i in range(m):
+            u = np.float32(x[i, j])
+            v = np.float32(x[i, k])
+            d += (u - v) ** 2
+        # Store distance result.
+        out[pair_index] = math.sqrt(d)
+
+
+@cuda.jit
+def kernel_hamming(x, out):
+    m = x.shape[0]
+    n = x.shape[1]
+    n_pairs = (n * (n - 1)) // 2
+    pair_index = cuda.grid(1)
+    if pair_index < n_pairs:
+        # Unpack the pair index to column indices.
+        j, k = square_coords(pair_index, n)
+        # Iterate over rows, accumulating distance.
+        numerator = np.float32(0)
+        for i in range(m):
+            u = x[i, j]
+            v = x[i, k]
+            # if u != v:
+            #     numerator += 1
+            numerator += u != v
+        # Store distance result.
+        out[pair_index] = numerator / m
+
+
+@cuda.jit
+def kernel_jaccard(x, out):
+    m = x.shape[0]
+    n = x.shape[1]
+    n_pairs = (n * (n - 1)) // 2
+    pair_index = cuda.grid(1)
+    if pair_index < n_pairs:
+        # Unpack the pair index to column indices.
+        j, k = square_coords(pair_index, n)
+        # Iterate over rows, accumulating distance.
+        numerator = np.float32(0)
+        denominator = np.float32(0)
+        for i in range(m):
+            u = x[i, j]
+            v = x[i, k]
+            denominator += u > 0 or v > 0
+            numerator += u != v
+            # if u > 0 or v > 0:
+            #     denonimator += 1
+            #     if u != v:
+            #         numerator += 1
+        # Store distance result.
+        out[pair_index] = numerator / denominator

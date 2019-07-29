@@ -39,11 +39,21 @@ class TimePairwiseDistance:
     def time_sqeuclidean_dask(self):
         pairwise_distance(self.data_dask, metric="sqeuclidean").compute()
 
+    def time_sqeuclidean_cuda(self):
+        if not cudasim:
+            pairwise_distance(self.data_cuda, metric="sqeuclidean")
+            cuda.synchronize()
+
     def time_euclidean_numpy(self):
         pairwise_distance(self.data, metric="euclidean")
 
     def time_euclidean_dask(self):
         pairwise_distance(self.data_dask, metric="euclidean").compute()
+
+    def time_euclidean_cuda(self):
+        if not cudasim:
+            pairwise_distance(self.data_cuda, metric="euclidean")
+            cuda.synchronize()
 
     def time_hamming_numpy(self):
         pairwise_distance(self.data, metric="hamming")
@@ -51,8 +61,18 @@ class TimePairwiseDistance:
     def time_hamming_dask(self):
         pairwise_distance(self.data_dask, metric="hamming").compute()
 
+    def time_hamming_cuda(self):
+        if not cudasim:
+            pairwise_distance(self.data_cuda, metric="hamming")
+            cuda.synchronize()
+
     def time_jaccard_numpy(self):
         pairwise_distance(self.data, metric="jaccard")
 
     def time_jaccard_dask(self):
         pairwise_distance(self.data_dask, metric="jaccard").compute()
+
+    def time_jaccard_cuda(self):
+        if not cudasim:
+            pairwise_distance(self.data_cuda, metric="jaccard")
+            cuda.synchronize()
