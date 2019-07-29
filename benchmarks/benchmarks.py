@@ -15,9 +15,9 @@ class TimePairwiseDistance:
 
     def setup(self):
         self.data = np.random.randint(
-            low=0, high=3, size=(20000, 100), dtype=np.int8
+            low=0, high=3, size=(2000, 1000), dtype=np.int8
         )
-        self.data_dask = da.from_array(self.data, chunks=(2000, -1))
+        self.data_dask = da.from_array(self.data, chunks=(200, -1))
         if not cudasim:
             self.data_cuda = cuda.to_device(self.data)
         #     self.data_dask_cuda = self.data_dask.map_blocks(cuda.to_device)
