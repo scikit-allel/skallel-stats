@@ -37,6 +37,14 @@ def _test_pairwise_distance(metric):
     assert_allclose(expect, ac)
     assert actual.dtype.kind == "f"
 
+    # # Test dask array with cuda.
+    # data_dask_cuda = data_dask.rechunk((10, -1)).map_blocks(cuda.to_device)
+    # actual = pairwise_distance(data_dask_cuda, metric=metric)
+    # assert isinstance(actual, da.Array)
+    # ac = actual.compute(scheduler="single-threaded")
+    # assert_allclose(expect, ac)
+    # assert actual.dtype.kind == "f"
+
     # Test zarr array.
     data_zarr = zarr.array(data, chunks=(10, 5))
     actual = pairwise_distance(data_zarr, metric=metric)

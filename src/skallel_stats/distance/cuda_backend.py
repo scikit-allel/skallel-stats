@@ -135,8 +135,6 @@ def kernel_hamming(x, out):
         for i in range(m):
             u = x[i, j]
             v = x[i, k]
-            # if u != v:
-            #     numerator += 1
             numerator += u != v
         # Store distance result.
         out[pair_index] = numerator / m
@@ -157,11 +155,8 @@ def kernel_jaccard(x, out):
         for i in range(m):
             u = x[i, j]
             v = x[i, k]
-            denominator += u > 0 or v > 0
-            numerator += u != v
-            # if u > 0 or v > 0:
-            #     denonimator += 1
-            #     if u != v:
-            #         numerator += 1
+            t = u > 0 or v > 0
+            denominator += t
+            numerator += t and u != v
         # Store distance result.
         out[pair_index] = numerator / denominator
