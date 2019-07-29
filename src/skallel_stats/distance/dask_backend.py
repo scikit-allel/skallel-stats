@@ -110,7 +110,7 @@ def pairwise_distance(x, *, metric, **kwargs):
 
     else:
 
-        raise NotImplementedError
+        raise ValueError
 
 
 api.dispatch_pairwise_distance.add((chunked_array_types,), pairwise_distance)

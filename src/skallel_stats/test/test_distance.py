@@ -4,6 +4,7 @@ import scipy.spatial.distance as spd
 import dask.array as da
 from numba import cuda
 import zarr
+import pytest
 from skallel_stats import pairwise_distance
 
 
@@ -71,3 +72,18 @@ def test_hamming():
 
 def test_jaccard():
     _test_pairwise_distance("jaccard")
+
+
+def test_not_implemented():
+
+    data = np.random.randint(low=0, high=3, size=(100, 10), dtype=np.int8)
+    with pytest.raises(ValueError):
+        pairwise_distance(data, metric="foo")
+
+    data_dask = da.from_array(data, chunks=(10, 5))
+    with pytest.raises(ValueError):
+        pairwise_distance(data_dask, metric="foo")
+
+    data_cuda = cuda.to_device(data)
+    with pytest.raises(ValueError):
+        pairwise_distance(data_cuda, metric="foo")

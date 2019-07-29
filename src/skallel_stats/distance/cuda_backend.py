@@ -43,7 +43,7 @@ def pairwise_distance(x, *, metric, **kwargs):
         kernel = kernel_jaccard
 
     else:
-        raise NotImplementedError
+        raise ValueError
 
     # Set up output array.
     n = x.shape[1]
