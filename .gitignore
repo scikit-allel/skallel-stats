@@ -118,3 +118,6 @@ pip-wheel-metadata/
 # asv
 .asv/
 
+# example data
+example.zarr
+
