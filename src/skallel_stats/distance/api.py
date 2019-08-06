@@ -3,7 +3,19 @@ from skallel_tensor.utils import check_array_like
 
 
 def pairwise_distance(x, *, metric, **kwargs):
-    """TODO"""
+    """Compute pairwise distance between columns of `x`.
+
+    Parameters
+    ----------
+    x : array_like
+    metric : str
+
+    Returns
+    -------
+    out : array_like, float
+        Condensed distance matrix.
+
+    """
 
     # Check inputs.
     check_array_like(x, ndim=2)
